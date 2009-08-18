@@ -3,11 +3,11 @@
 # Used so I can use spiffy RMagick geometry strings with ImageScience
 class Geometry
   # ! and @ are removed until support for them is added
-  FLAGS = ['', '%', '<', '>']#, '!', '@']
+  FLAGS = ['', '%', '<', '>', '!']#, '@']
   RFLAGS = { '%' => :percent,
              '!' => :aspect,
-             '<' => :>,
-             '>' => :<,
+             '<' => :<,
+             '>' => :>,
              '@' => :area }
 
   attr_accessor :width, :height, :x, :y, :flag
@@ -44,7 +44,7 @@ class Geometry
     str << 'x' if (@width > 0 || @height > 0)
     str << "%g" % @height if @height > 0
     str << "%+d%+d" % [@x, @y] if (@x != 0 || @y != 0)
-    str << FLAGS[@flag.to_i]
+    str << RFLAGS.index(@flag)
   end
   
   # attempts to get new dimensions for the current geometry string given these old dimensions.
@@ -54,6 +54,10 @@ class Geometry
     new_height = orig_height
 
     case @flag
+    when :aspect
+      new_width  = @width  unless @width.nil?
+      new_height = @height unless @height.nil?
+      
       when :percent
         scale_x = @width.zero?  ? 100 : @width
         scale_y = @height.zero? ? @width : @height
@@ -72,8 +76,8 @@ class Geometry
           end
         new_width  = scale_factor * new_width.to_f
         new_height = scale_factor * new_height.to_f
-        new_width  = orig_width  if @flag && orig_width.send(@flag,  new_width)
-        new_height = orig_height if @flag && orig_height.send(@flag, new_height)
+        new_width  = orig_width  if @flag && new_width.send(@flag,  orig_width)
+        new_height = orig_height if @flag && new_height.send(@flag, orig_height)
     end
 
     [new_width, new_height].collect! { |v| [v.round, 1].max }
